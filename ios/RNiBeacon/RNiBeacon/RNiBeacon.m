@@ -38,11 +38,11 @@ RCT_EXPORT_MODULE()
     self.locationManager = [[CLLocationManager alloc] init];
 
     self.locationManager.delegate = self;
-      
+
     // Options to allow app killed state running
     self.locationManager.desiredAccuracy = kCLLocationAccuracyThreeKilometers;
     self.locationManager.allowsBackgroundLocationUpdates = true;
-      
+
     self.locationManager.pausesLocationUpdatesAutomatically = NO;
     self.dropEmptyRanges = NO;
 
@@ -358,7 +358,7 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
                               },
                           @"beacons": beaconArray
                           };
-    
+
     NSLog(@"[Beacon][Native] beaconsDidRange 1");
 
     [self sendEventWithName:@"beaconsDidRange" body:event];
@@ -378,6 +378,8 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
   NSLog(@"[Beacon][Native] regionDidExit");
   [self sendEventWithName:@"regionDidExit" body:event];
+  NSLog(@"[Beacon][Native] regionDidExit - removing from ranging");
+  [self.locationManager stopRangingBeaconsInRegion: region];
 }
 
 + (BOOL)requiresMainQueueSetup
@@ -391,7 +393,7 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
 
 - (void)notifyAboutBeaconChanges:(NSArray *)beacons {
     NSMutableArray *beaconArray = [[NSMutableArray alloc] init];
-    
+
     for (id key in beacons) {
         ESSBeaconInfo *beacon = key;
         NSDictionary *info = [self getEddyStoneInfo:beacon];
@@ -426,12 +428,12 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
     if ([rssi floatValue] >= 0){
         return [NSNumber numberWithInt:-1];
     }
-    
+
     float ratio = [rssi floatValue] / ([txPower floatValue] - 41);
     if (ratio < 1.0) {
         return [NSNumber numberWithFloat:pow(ratio, 10)];
     }
-    
+
     float distance = (0.89976) * pow(ratio, 7.7095) + 0.111;
     return [NSNumber numberWithFloat:distance];
 }
@@ -442,13 +444,13 @@ RCT_EXPORT_METHOD(shouldDropEmptyRanges:(BOOL)drop)
     if (!dataBuffer) {
         return [NSString string];
     }
-    
+
     NSMutableString *hexString  = [NSMutableString stringWithCapacity:(data.length * 2)];
     [hexString appendString:@"0x"];
     for (int i = 0; i < EDDYSTONE_UUID_LENGTH; ++i) {
         [hexString appendString:[NSString stringWithFormat:@"%02lx", (unsigned long)dataBuffer[i]]];
     }
-    
+
     return [NSString stringWithString:hexString];
 }
 
